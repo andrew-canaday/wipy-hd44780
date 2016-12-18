@@ -14,4 +14,15 @@ License
 -------
 This library is licensed under the MIT license. See **LICENSE** for details.
 
+Example
+-------
+
+```Python
+from hd44780 import HD44780
+# By default, this will initialize the LCD controller for 4-bit mode,
+# one a 16x2 display, and a 5x8 font:
+lcd = HD44780()         # (See constructor for pin/size args!)
+lcd.set_entry_mode(1,0) # Automatically increment cursor on write
+lcd.write("Hello, world!")
+```
 
