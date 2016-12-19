@@ -36,11 +36,12 @@ __version__ = 'v0.0.1'
 
 class HD44780(object):
     """
-    Simple bit-banging controller class for HD44780-based LCD displays.
+    Simple bit-banging controller class for HD44780-based LCD displays for the
+    wipy microcontroller.
     """
 
     # HD44780 pin labels:
-    LCD_PINS = (
+    LCD_DATA_PINS = (
             'D7',
             'D6',
             'D5',
@@ -79,8 +80,8 @@ class HD44780(object):
             clk='GP0',
             rs='GP4',
             rw=None,
-            disp_width=16,
-            disp_height=2,
+            width=16,
+            height=2,
             font=FONT_5x8,
             ):
         """
@@ -92,8 +93,8 @@ class HD44780(object):
          - rs:          The NAME of the pin to use to set the message type bit/pin
          - rw:          The NAME of the pin to use to set the RW bit/pin
                         (NOTE: RW functionality not yet implemented!)
-         - disp_width:  The width of the display, in characters
-         - disp_height: The height of the display, in characters
+         - width:  The width of the display, in characters
+         - height: The height of the display, in characters
          - font:        Display font
 
         Defaults:
@@ -107,7 +108,7 @@ class HD44780(object):
 
         NOTES:
            Addressing is based off the information found here: http://web.alfredstate.edu/weimandn/lcd/lcd_addressing/lcd_addressing_index.html.
-           For "Type 1" 16x1 screens, set disp_width=8, disp_height=2
+           For "Type 1" 16x1 screens, set width=8, height=2
         """
 
         if host_pins is None:
@@ -126,9 +127,9 @@ class HD44780(object):
 
         # Accounting:
         self._ch_idx = 0
-        self._disp_w = disp_width
-        self._disp_h = disp_height
-        self._line_addr = self._init_line_addrs(disp_width,disp_height)
+        self._width = width
+        self._height = height
+        self._line_addr = self._init_line_addrs(width,height)
         self._no_pins = len(self._data_pins)
         self._mode = self.MODE_UNKNOWN
         self._last_cmd_complete = 0
@@ -155,7 +156,7 @@ class HD44780(object):
 
         # Indicate to the hardware whether we are using a one or
         # multi-line display (also, default to 5x8 font):
-        if self._disp_h == 1:
+        if self._height == 1:
             self.set_function(0,0)
         else:
             self.set_function(1,0)
@@ -176,12 +177,14 @@ class HD44780(object):
             return self.MODE_UNKNOWN
 
     @property
-    def display_width(self):
-        return self._disp_w
+    def width(self):
+        """Return the physical display width (in characters)"""
+        return self._width
 
     @property
-    def display_height(self):
-        return self._disp_h
+    def height(self):
+        """Return the physical display height (in characters)"""
+        return self._height
 
     @property
     def host_pins(self):
@@ -198,7 +201,7 @@ class HD44780(object):
 
     def home(self):
         """
-        Return the cursor to home.
+        Return the cursor/screen/shift to home.
         """
         return self._send([0,0,0,0,0,0,1,0], self.MSG_TYPE_CMD)
 
@@ -222,17 +225,17 @@ class HD44780(object):
         self._ch_idx = 0 # Reset character counter
 
         for ch in buf:
-            line_pos = self._ch_idx % self._disp_w
+            line_pos = self._ch_idx % self._width
 
             # If we've reached the beginning of a line:
             if line_pos == 0:
-                line_no = self._ch_idx // self._disp_w
+                line_no = self._ch_idx // self._width
                 self.set_ddram(self._line_addr[line_no])
 
             # Send actual data:
             data = [int(x) for x in list('{0:08b}'.format(ord(ch)))]
             self._send(data, self.MSG_TYPE_DATA)
-            self._ch_idx = (self._ch_idx + 1) % (self._disp_w * self._disp_h)
+            self._ch_idx = (self._ch_idx + 1) % (self._width * self._height)
         return
 
     def set_8bit_mode(self):
@@ -325,12 +328,19 @@ class HD44780(object):
                 self._data_pins[b].value(bit_data[i+b])
 
             # Pins are set; toggle the clock/enable pin:
-            self._clk_pin.toggle()
-            time.sleep_us(delay_us)
-            self._clk_pin.toggle()
+            self._clk_pin.value(1)
+            time.sleep_us(delay_us) # <-- hack: Wait MAX amount of time.
+                                    # TODO: use _wait_for_completion or RW bit
+            self._clk_pin.value(0)
         return
 
     def _init_line_addrs(self, w, h):
+        """
+        Set the "beginning of line" addresses for each line available on the
+        physical display (this is used to automatically jump to the beginning
+        of the next line when we've run over the width boundary for the current
+        one).
+        """
         # For 16x1:
         if h == 1:
             return (self.DDRAM0_START)
@@ -363,7 +373,7 @@ class HD44780(object):
                 time.sleep_us( remain_us )
             else:
                 # TODO: leverage RW pin to wait on completion, if available.
-                # For now, we do the same as if we had now RW pin:
+                # For now, we do the same as if we had no RW pin:
                 time.sleep_us( remain_us )
 
         # Update last timestamp and proceed:
