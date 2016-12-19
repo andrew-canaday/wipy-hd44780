@@ -32,6 +32,7 @@
 import time
 from machine import Pin
 
+__version__ = 'v0.0.1'
 
 class HD44780(object):
     """
