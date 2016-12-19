@@ -32,6 +32,7 @@
 import time
 from machine import Pin
 
+__version__ = 'v0.0.1'
 
 class HD44780(object):
     """
@@ -54,10 +55,10 @@ class HD44780(object):
     DDRAM_TOTAL  = 80
 
     # Line addresses:
-    DRAM0_START = 0x00
-    DRAM0_END   = 0x27
-    DRAM1_START = 0x40
-    DRAM0_END   = 0x67
+    DDRAM0_START = 0x00
+    DDRAM0_END   = 0x27
+    DDRAM1_START = 0x40
+    DDRAM1_END   = 0x67
 
     # Message type constants:
     MSG_TYPE_CMD  = 0
@@ -332,13 +333,17 @@ class HD44780(object):
     def _init_line_addrs(self, w, h):
         # For 16x1:
         if h == 1:
-            return (0x00)
+            return (self.DDRAM0_START)
         # For 16x2, 20x2, 40x2
         elif h == 2:
-            return (0x00,0x40)
+            return (self.DDRAM0_START, self.DDRAM1_START)
         # For 20x4
         elif h == 4:
-            return (0x00, 0x40, 0x14, 0x54)
+            return (self.DDRAM0_START,
+                    self.DDRAM1_START,
+                    self.DDRAM0_START + 0x14,
+                    self.DDRAM1_START + 0x14,
+                    )
         else:
             raise Exception("No DDRAM -> pixel mapping for this ratio!")
         return
