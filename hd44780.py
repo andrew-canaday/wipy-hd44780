@@ -32,7 +32,7 @@
 import time
 from machine import Pin
 
-__version__ = 'v0.0.1'
+__version__ = 'v1.0.0'
 
 class HD44780(object):
     """
@@ -141,13 +141,13 @@ class HD44780(object):
             self._rw_pin = None
 
         # Rest to 8-bit mode (starting point for all HD44780 configurations):
-        self.set_8bit_mode()
+        self.init_8bitmode()
 
         # Set mode based on number of pins:
         if self._no_pins == 8:
-            self.set_8bit_mode()
+            self.init_8bitmode()
         elif self._no_pins == 4:
-            self.set_4bit_mode()
+            self.init_4bitmode()
         else:
             raise Exception("Number of pins must be 4 or 8!")
 
@@ -238,7 +238,7 @@ class HD44780(object):
             self._ch_idx = (self._ch_idx + 1) % (self._width * self._height)
         return
 
-    def set_8bit_mode(self):
+    def init_8bitmode(self):
         """
         Safely transition HD44780 controller to 8-bit mode.
         """
@@ -247,12 +247,12 @@ class HD44780(object):
         self._mode = self.MODE_8BIT
         return
 
-    def set_4bit_mode(self):
+    def init_4bitmode(self):
         """
         Safely transition HD44780 controller to 4-bit mode.
         """
         if self._mode != self.MODE_8BIT:
-            self.set_8bit_mode()
+            self.init_8bitmode()
         self._send([0,0,1,0], self.MSG_TYPE_CMD)
         return
 

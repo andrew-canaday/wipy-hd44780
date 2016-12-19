@@ -27,8 +27,9 @@ from hd44780 import HD44780
 # By default, this will initialize the LCD controller for 4-bit mode; use pins
 # 08,30,31,03 for D7-D4, pin 00 for CLK/E, and pin 04 for RS; RW is unset; the
 # default display size is assumed to be *16x2*, with a 5x8 font:
-lcd = HD44780()         # (See constructor for pin/size args!)
-lcd.set_entry_mode(1,0) # Automatically increment cursor on write
+lcd = HD44780()             # (See constructor for pin/size args!)
+lcd.set_display_opts(1,1,1) # Turn it on!
+lcd.set_entry_mode(1,0)     # Automatically increment cursor on write
 lcd.write("Hello, world!")
 
 # Custom pins setup:
@@ -42,6 +43,9 @@ lcd2 = HD44780(
 	height=4
 	font=HD44780.FONT_5x10
 	)
+lcd.set_display_opts(1,1,1) # Turn it on!
+lcd.set_entry_mode(1,0)     # Automatically increment cursor on write
+lcd.write("Hello, other world!")
 ```
 
 Notes
